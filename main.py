@@ -63,10 +63,13 @@ class AnalyseRTCP:
 
 
 if __name__ == '__main__':
-    task = AnalyseRTCP()
-    task.SniiffRTCP()
+    # task = AnalyseRTCP()
+    # task.SniiffRTCP()
     # results = task.getPacket('RTCP_From_MG.pcap')
-    
+
+    with open('SessionData.txt','r') as f:
+        results = json.load(f)
+
     x_7,y_7,x_8,y_8 = [],[],[],[]
     fig, (ax7, ax8) = plt.subplots(2, 1, sharex=True)
 
