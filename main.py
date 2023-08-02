@@ -42,7 +42,7 @@ class AnalyseRTCP:
 
     def CheckPacket(self,Packet) -> None:
         IPaddr = Packet['IP'].src
-        PacketRaw =bytes(i['Raw'])
+        PacketRaw =bytes(Packet['Raw'])
         ReportCount = PacketRaw[0]
         Type = PacketRaw[1]
         if Type == 200:
@@ -59,13 +59,13 @@ class AnalyseRTCP:
             json.dump(self.Data,f,indent=4)
 
     def SniiffRTCP(self) -> None:
-        sniff(filter = 'udp and port 5055',store = 0,prn=self.CheckPacket,iface='乙太網路')
+        sniff(filter = 'udp and port 5005',store = 0,prn=self.CheckPacket,iface='乙太網路 4')
 
 
 if __name__ == '__main__':
     task = AnalyseRTCP()
-    # task.SniiffRTCP()
-    results = task.getPacket('RTCP_From_MG.pcap')
+    task.SniiffRTCP()
+    # results = task.getPacket('RTCP_From_MG.pcap')
     
     x_7,y_7,x_8,y_8 = [],[],[],[]
     fig, (ax7, ax8) = plt.subplots(2, 1, sharex=True)
