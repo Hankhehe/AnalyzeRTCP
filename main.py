@@ -1,5 +1,6 @@
 from scapy.all import rdpcap,sniff
 import json,matplotlib.pyplot as plt
+from datetime import datetime
 
 class AnalyseRTCP:
     def __init__(self) -> None:
@@ -7,16 +8,17 @@ class AnalyseRTCP:
         self.Data = {}
         self.PacketNumber = 1
     
-    def Get_SrcID_From_RR(self,Packet) -> None:
+    def Get_Data_From_RR(self,Packet) -> None:
         '''傳進 RR 封包並解析出 SrcID、Lost、DelayTime'''
         SrcID = int(Packet[8:12].replace(b'/',b'').hex(),16)
         PacketsLost = int(Packet[13:16].replace(b'/',b'').hex(),16)
         Jitter = int(Packet[20:24].replace(b'/',b'').hex(),16)
         DelayTime = int(Packet[28:32].replace(b'/',b'').hex(),16)
         if not self.IDmatch[SrcID] in self.Data : self.Data[self.IDmatch[SrcID]] = []
-        self.Data[self.IDmatch[SrcID]].append({'ID':SrcID,'Jitter':Jitter,'PacketLost':PacketsLost,'DelayTime':DelayTime})
-
-    def Get_Data_From_SR(self,Packet,IPAddr) -> None:
+        self.Data[self.IDmatch[SrcID]].append({'ID':SrcID,'Jitter':Jitter,'PacketLost':PacketsLost
+                                               ,'DelayTime':DelayTime ,'CreateTime':datetime.now().strftime('%Y-%m-%d %H:%M')})
+        
+    def Get_SrcID_From_SR(self,Packet,IPAddr) -> None:
         '''傳進 SR 封包，將 Src ID 存進 Data'''
         SrcID =int(Packet[4:8].replace(b'/',b'').hex(),16)
         self.IDmatch[SrcID] = IPAddr
@@ -28,10 +30,10 @@ class AnalyseRTCP:
         ReportCount = PacketRaw[0]
         Type = PacketRaw[1]
         if Type == 200: 
-            self.Get_Data_From_SR(PacketRaw,IPaddr)
+            self.Get_SrcID_From_SR(PacketRaw,IPaddr)
 
         elif Type == 201 and ReportCount == 129 :
-            self.Get_SrcID_From_RR(PacketRaw)
+            self.Get_Data_From_RR(PacketRaw)
         self.PacketNumber +=1
 
         with open('DeviceID.txt','w') as f:
