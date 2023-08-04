@@ -42,3 +42,7 @@ if __name__ == '__main__':
     rtcp_packets: list[RtcpPayload.RtcpPacket] = [pack for payload in rtcp_payloads for pack in payload.rtcp_packets]
     print('Total RTCP Packets: ', len(rtcp_packets))
     print('Goodbye packet count: ', len([p for p in rtcp_packets if p.payload_type == RtcpPayload.PayloadType.bye]))
+    sr_packets = [p for p in rtcp_packets if p.payload_type == RtcpPayload.PayloadType.sr]
+    rr_packets = [p for p in rtcp_packets if p.payload_type == RtcpPayload.PayloadType.rr]
+    print('Sender report packet count: ', len(sr_packets))
+    print('Receiver report packet count: ', len(rr_packets))
