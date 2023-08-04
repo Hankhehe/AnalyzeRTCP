@@ -41,6 +41,7 @@ types:
             'payload_type::sdes': sdes_packet
             'payload_type::psfb': psfb_packet
             'payload_type::rtpfb': rtpfb_packet
+            'payload_type::bye': bye_packet
 
   sr_packet:
     seq:
@@ -224,6 +225,18 @@ types:
       max_total_bitrate:
         value: br_mantissa * (1<<br_exp)
 
+  bye_packet:
+    seq:
+      - id: identifier
+        type: u4
+      - id: text_length
+        type: u1
+        if: _parent.length > 1
+      - id: text
+        type: str
+        encoding: ascii
+        size: text_length
+        if: _parent.length > 1
 
 
 enums:
