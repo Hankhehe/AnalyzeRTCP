@@ -159,6 +159,10 @@ class RtcpPayload(KaitaiStruct):
                 self._raw_body = self._io.read_bytes((4 * self.length))
                 _io__raw_body = KaitaiStream(BytesIO(self._raw_body))
                 self.body = RtcpPayload.SrPacket(_io__raw_body, self, self._root)
+            elif _on == RtcpPayload.PayloadType.bye:
+                self._raw_body = self._io.read_bytes((4 * self.length))
+                _io__raw_body = KaitaiStream(BytesIO(self._raw_body))
+                self.body = RtcpPayload.ByePacket(_io__raw_body, self, self._root)
             elif _on == RtcpPayload.PayloadType.psfb:
                 self._raw_body = self._io.read_bytes((4 * self.length))
                 _io__raw_body = KaitaiStream(BytesIO(self._raw_body))
@@ -315,6 +319,23 @@ class RtcpPayload(KaitaiStruct):
             while not self._io.is_eof():
                 self.sdes_tlv.append(RtcpPayload.SdesTlv(self._io, self, self._root))
                 i += 1
+
+
+
+    class ByePacket(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.identifier = self._io.read_u4be()
+            if self._parent.length > 1:
+                self.text_length = self._io.read_u1()
+
+            if self._parent.length > 1:
+                self.text = (self._io.read_bytes(self.text_length)).decode(u"ascii")
 
 
 
