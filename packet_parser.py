@@ -40,11 +40,11 @@ def parse_pcap_file(filepath: str):
         pack for payload in rtcp_payloads for pack in payload.rtcp_packets]
     print('Total RTCP Packets: ', len(rtcp_packets))
     print('Goodbye packet count: ', len(
-        [p for p in rtcp_packets if p.payload_type == RtcpPayload.PayloadType.bye]))
-    sr_packets = [p for p in rtcp_packets if p.payload_type ==
-                  RtcpPayload.PayloadType.sr]
-    rr_packets = [p for p in rtcp_packets if p.payload_type ==
-                  RtcpPayload.PayloadType.rr]
+        [p for p in rtcp_packets if p.type == RtcpPayload.PacketType.bye]))
+    sr_packets = [p for p in rtcp_packets if p.type ==
+                  RtcpPayload.PacketType.sr]
+    rr_packets = [p for p in rtcp_packets if p.type ==
+                  RtcpPayload.PacketType.rr]
     print('Sender report packet count: ', len(sr_packets))
     print('Receiver report packet count: ', len(rr_packets))
 
@@ -52,20 +52,39 @@ def parse_pcap_file(filepath: str):
 if __name__ == '__main__':
     # parse_pcap_file('4.pcap')
 
-    for idx, packet in enumerate(rdpcap('4.pcap')):
+    for idx, packet in enumerate(rdpcap('RTCP_From_MG.pcap')):
         payload = parse_rtcp_payload(packet)
 
         for packet in payload.rtcp_packets:
             assert isinstance(packet, RtcpPayload.RtcpPacket)
-            if packet.payload_type == RtcpPayload.PayloadType.rr:
-                rr_packet: RtcpPayload.RrPacket = packet.body
-                for report in rr_packet.report_blocks:
+            if packet.type in [RtcpPayload.PacketType.sr, RtcpPayload.PacketType.rr]:
+                for report in packet.data.report_blocks:
                     assert isinstance(report, RtcpPayload.ReportBlock)
                     print(
-                        "SSRC_ID: ", report.ssrc_source_identifier, "\n",
+                        "SSRC_ID: ", report.ssrc_identifier, "\n",
                         "Packets Lost: ", report.fraction_lost, "\n",
                         "Jitter: ", report.interarrival_jitter, "\n",
                         "Last SR: ", report.last_sr, "\n",
                         "Delay Since Last SR: ", report.delay_since_last_sr, "\n",
                         "====================================="
                     )
+
+            elif packet.type == RtcpPayload.PacketType.bye:
+                assert isinstance(packet.data, RtcpPayload.ByePacket)
+                print(
+                    "SSRC_ID: ", packet.data.ssrc, "\n",
+                    "Text: ", packet.data.text if hasattr(packet.data, 'text') else "", "\n",
+                    "====================================="
+                )
+
+            elif packet.type == RtcpPayload.PacketType.sdes:
+                assert isinstance(packet.data, RtcpPayload.SdesPacket)
+                for chunk in packet.data.chunks:
+                    assert isinstance(chunk, RtcpPayload.SdesChunk)
+                    print("SSRC_ID: ", chunk.ssrc)
+                    for item in chunk.items:
+                        assert isinstance(item, RtcpPayload.SdesItem)
+                        if item.type == RtcpPayload.SdesItemType.end:
+                            break
+                        print("Type: ", item.type, ", value: ", item.value)
+                        print("=====================================")

@@ -26,26 +26,26 @@ types:
         type: b1
       - id: subtype
         type: b5
-      - id: payload_type
+      - id: type
         type: u1
-        enum: payload_type
+        enum: packet_type
       - id: length
         type: u2
-      - id: body
+      - id: data
         size: 4 * length
         type:
-          switch-on: payload_type
+          switch-on: type
           cases:
-            'payload_type::sr': sr_packet
-            'payload_type::rr': rr_packet
-            'payload_type::sdes': sdes_packet
-            'payload_type::psfb': psfb_packet
-            'payload_type::rtpfb': rtpfb_packet
-            'payload_type::bye': bye_packet
+            'packet_type::sr': sr_packet
+            'packet_type::rr': rr_packet
+            'packet_type::sdes': sdes_packet
+            'packet_type::bye': bye_packet
+            'packet_type::psfb': psfb_packet
+            'packet_type::rtpfb': rtpfb_packet
 
   sr_packet:
     seq:
-      - id: ssrc
+      - id: sneder_ssrc
         type: u4
       - id: ntp_msw
         type: u4
@@ -67,7 +67,7 @@ types:
 
   rr_packet:
     seq:
-      - id: ssrc
+      - id: sneder_ssrc
         type: u4
       - id: report_blocks
         type: report_block
@@ -76,7 +76,7 @@ types:
 
   report_block:
     seq:
-      - id: ssrc_source_identifier
+      - id: ssrc_identifier
         type: u4
       - id: fraction_lost
         type: u1
@@ -93,33 +93,33 @@ types:
 
   sdes_packet:
     seq:
-      - id: source_chunk
-        type: source_chunk
+      - id: chunks
+        type: sdes_chunk
         repeat: expr
-        repeat-expr: num_source_chunk
+        repeat-expr: num_chunks
     instances:
-      num_source_chunk:
+      num_chunks:
         value: _parent.subtype
 
-  source_chunk:
+  sdes_chunk:
     seq:
       - id: ssrc
         type: u4
-      - id: sdes_tlv
-        type: sdes_tlv
+      - id: items
+        type: sdes_item
         repeat: eos
-
-  sdes_tlv:
+  
+  sdes_item:
     seq:
       - id: type
         type: u1
-        enum: sdes_subtype
-      - id: length
+        enum: sdes_item_type
+      - id: len_value
         type: u1
-        if: type != sdes_subtype::pad
+        if: type != sdes_item_type::end
       - id: value
-        size: length
-        if: type != sdes_subtype::pad
+        size: len_value
+        if: type != sdes_item_type::end
 
   rtpfb_packet:
     seq:
@@ -158,26 +158,6 @@ types:
       recv_delta:
         size: 0
 
-  packet_status_chunk:
-    seq:
-      - id: t
-        type: b1
-      - id: s2
-        type: b2
-        if: t.to_i == 0
-      - id: s1
-        type: b1
-        if: t.to_i == 1
-      - id: rle
-        type: b13
-        if: t.to_i == 0
-      - id: symbol_list
-        type: b14
-        if: t.to_i == 1
-    instances:
-      s:
-        value: '(t.to_i == 0) ? s2 : (s1.to_i == 0 ? 1 : 0)'
-
   psfb_packet:
     seq:
       - id: ssrc
@@ -208,7 +188,7 @@ types:
 
   psfb_afb_remb_packet:
     seq:
-      - id: num_ssrc
+      - id: num_ssrc_list
         type: u1
       - id: br_exp
         type: b6
@@ -217,27 +197,26 @@ types:
       - id: ssrc_list
         type: u4
         repeat: expr
-        repeat-expr: num_ssrc
+        repeat-expr: num_ssrc_list
     instances:
       max_total_bitrate:
         value: br_mantissa * (1<<br_exp)
 
   bye_packet:
     seq:
-      - id: identifier
+      - id: ssrc
         type: u4
-      - id: text_length
+      - id: len_text
         type: u1
         if: _parent.length > 1
       - id: text
         type: str
         encoding: ascii
-        size: text_length
+        size: len_text
         if: _parent.length > 1
 
-
 enums:
-  payload_type:
+  packet_type:
     192: fir
     193: nack
     195: ij
@@ -251,8 +230,9 @@ enums:
     207: xr
     208: avb
     209: rsi
-  sdes_subtype:
-    0: pad
+  
+  sdes_item_type:
+    0: end
     1: cname
     2: name
     3: email
@@ -261,6 +241,7 @@ enums:
     6: tool
     7: note
     8: priv
+  
   psfb_subtype:
     1: pli
     2: sli
@@ -270,6 +251,7 @@ enums:
     6: tstn
     7: vbcm
     15: afb
+  
   rtpfb_subtype:
     1: nack
     3: tmmbr
