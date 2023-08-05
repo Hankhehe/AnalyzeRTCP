@@ -111,9 +111,9 @@ class RtcpPayload(KaitaiStruct):
             self.rtp_timestamp = self._io.read_u4be()
             self.sender_packet_count = self._io.read_u4be()
             self.sender_octet_count = self._io.read_u4be()
-            self.report_block = []
+            self.report_blocks = []
             for i in range(self._parent.subtype):
-                self.report_block.append(RtcpPayload.ReportBlock(self._io, self, self._root))
+                self.report_blocks.append(RtcpPayload.ReportBlock(self._io, self, self._root))
 
 
         @property
@@ -134,9 +134,9 @@ class RtcpPayload(KaitaiStruct):
 
         def _read(self):
             self.ssrc = self._io.read_u4be()
-            self.report_block = []
+            self.report_blocks = []
             for i in range(self._parent.subtype):
-                self.report_block.append(RtcpPayload.ReportBlock(self._io, self, self._root))
+                self.report_blocks.append(RtcpPayload.ReportBlock(self._io, self, self._root))
 
 
 
@@ -208,28 +208,13 @@ class RtcpPayload(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.ssrc_source = self._io.read_u4be()
-            self.lost_val = self._io.read_u1()
-            self.highest_seq_num_received = self._io.read_u4be()
+            self.ssrc_source_identifier = self._io.read_u4be()
+            self.fraction_lost = self._io.read_u1()
+            self.cumulative_number_of_packets_lost = self._io.read_bytes(3)
+            self.extended_highest_sequence_number_received = self._io.read_u4be()
             self.interarrival_jitter = self._io.read_u4be()
-            self.lsr = self._io.read_u4be()
-            self.dlsr = self._io.read_u4be()
-
-        @property
-        def fraction_lost(self):
-            if hasattr(self, '_m_fraction_lost'):
-                return self._m_fraction_lost
-
-            self._m_fraction_lost = (self.lost_val >> 24)
-            return getattr(self, '_m_fraction_lost', None)
-
-        @property
-        def cumulative_packets_lost(self):
-            if hasattr(self, '_m_cumulative_packets_lost'):
-                return self._m_cumulative_packets_lost
-
-            self._m_cumulative_packets_lost = (self.lost_val & 16777215)
-            return getattr(self, '_m_cumulative_packets_lost', None)
+            self.last_sr = self._io.read_u4be()
+            self.delay_since_last_sr = self._io.read_u4be()
 
 
     class RtpfbTransportFeedbackPacket(KaitaiStruct):
@@ -348,17 +333,17 @@ class RtcpPayload(KaitaiStruct):
 
         def _read(self):
             self.source_chunk = []
-            for i in range(self.source_count):
+            for i in range(self.num_source_chunk):
                 self.source_chunk.append(RtcpPayload.SourceChunk(self._io, self, self._root))
 
 
         @property
-        def source_count(self):
-            if hasattr(self, '_m_source_count'):
-                return self._m_source_count
+        def num_source_chunk(self):
+            if hasattr(self, '_m_num_source_chunk'):
+                return self._m_num_source_chunk
 
-            self._m_source_count = self._parent.subtype
-            return getattr(self, '_m_source_count', None)
+            self._m_num_source_chunk = self._parent.subtype
+            return getattr(self, '_m_num_source_chunk', None)
 
 
     class RtpfbPacket(KaitaiStruct):

@@ -57,7 +57,7 @@ types:
         type: u4
       - id: sender_octet_count
         type: u4
-      - id: report_block
+      - id: report_blocks
         type: report_block
         repeat: expr
         repeat-expr: _parent.subtype
@@ -69,39 +69,36 @@ types:
     seq:
       - id: ssrc
         type: u4
-      - id: report_block
+      - id: report_blocks
         type: report_block
         repeat: expr
         repeat-expr: _parent.subtype
 
   report_block:
     seq:
-      - id: ssrc_source
+      - id: ssrc_source_identifier
         type: u4
-      - id: lost_val
+      - id: fraction_lost
         type: u1
-      - id: highest_seq_num_received
+      - id: cumulative_number_of_packets_lost 
+        size: 3
+      - id: extended_highest_sequence_number_received  
         type: u4
-      - id: interarrival_jitter
+      - id: interarrival_jitter 
         type: u4
-      - id: lsr
+      - id: last_sr
         type: u4
-      - id: dlsr
+      - id: delay_since_last_sr
         type: u4
-    instances:
-      fraction_lost:
-        value: lost_val >> 24
-      cumulative_packets_lost:
-        value: lost_val & 0x00ffffff
 
   sdes_packet:
     seq:
       - id: source_chunk
         type: source_chunk
         repeat: expr
-        repeat-expr: source_count
+        repeat-expr: num_source_chunk
     instances:
-      source_count:
+      num_source_chunk:
         value: _parent.subtype
 
   source_chunk:
